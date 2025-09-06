@@ -1,4 +1,5 @@
 # Основные настройки
+PROJECT=gunicorn
 DOMAIN=c.falbue.ru
 SERVICE_NAME=c_runner
 
