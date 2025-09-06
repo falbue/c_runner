@@ -1,19 +1,14 @@
+version: '3.8'
 services:
-  web:
+  flask-app:
     build: .
-    container_name: ${SERVICE_NAME}
-    image: ${SERVICE_NAME}
-    ports:
-      - "${HOST_PORT}:${CONTAINER_PORT}"
-    restart: unless-stopped
-    env_file: .production
     volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
       - save_volume:/data
-      
-  runner-app:
-    build:
-      context: .
-      dockerfile: Dockerfile.runner
+    ports:
+      - "5000:5000"
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
 
 volumes:
   save_volume:

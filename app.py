@@ -10,10 +10,10 @@ app.logger.setLevel(logging.INFO)
 
 # Инициализируем Docker клиент
 try:
-    docker_client = docker.DockerClient(base_url='unix:///var/run/docker.sock')
+    docker_client = docker.from_env()
     docker_client.ping()
 except Exception as e:
-    app.logger.error(f"Docker connection error: {e}")
+    app.logger.error(f"Не удалось подключится к Docker: {e}")
     docker_client = None
 
 @app.route('/')
