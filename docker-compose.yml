@@ -1,0 +1,19 @@
+services:
+  web:
+    build: .
+    container_name: ${SERVICE_NAME}
+    image: ${SERVICE_NAME}
+    ports:
+      - "${HOST_PORT}:${CONTAINER_PORT}"
+    restart: unless-stopped
+    env_file: .production
+    volumes:
+      - save_volume:/data
+      
+  runner-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.runner
+
+volumes:
+  save_volume:
