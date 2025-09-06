@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C Code Runner</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --danger: #dc2626;
+            --success: #16a34a;
+            --bg: #f8fafc;
+            --text: #1e293b;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .header {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 400px;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: 'Fira Code', monospace;
+            font-size: 14px;
+            resize: vertical;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .btn-run {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-run:hover {
+            background: #1d4ed8;
+        }
+        
+        .btn-clear {
+            background: #64748b;
+            color: white;
+        }
+        
+        .btn-clear:hover {
+            background: #475569;
+        }
+        
+        #output {
+            min-height: 400px;
+            max-height: 600px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            background: #1e293b;
+            color: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Fira Code', monospace;
+        }
+        
+        .output-success {
+            border-left: 4px solid var(--success);
+        }
+        
+        .output-error {
+            border-left: 4px solid var(--danger);
+        }
+        
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-code"></i> C Code Runner</h1>
+            <p>Write and execute C code in a secure environment</p>
+        </div>
+        
+        <div class="panel">
+            <h2><i class="fas fa-pencil-alt"></i> Source Code</h2>
+            <textarea id="code" placeholder="Enter your C code here...">#include <stdio.h>
+
+int main() {
+    printf("Hello, World!\n");
+    return 0;
+}</textarea>
+            
+            <div class="controls">
+                <button class="btn-run" onclick="runCode()">
+                    <i class="fas fa-play"></i> Run Code
+                </button>
+                <button class="btn-clear" onclick="clearCode()">
+                    <i class="fas fa-trash"></i> Clear
+                </button>
+            </div>
+        </div>
+        
+        <div class="panel">
+            <h2><i class="fas fa-terminal"></i> Output</h2>
+            <div class="loader" id="loader">
+                <div class="spinner"></div>
+                <p>Executing code...</p>
+            </div>
+            <pre id="output"></pre>
+        </div>
+    </div>
+
+    <script>
+        const codeEditor = document.getElementById('code');
+        const outputElement = document.getElementById('output');
+        const loader = document.getElementById('loader');
+        
+        function setOutput(content, isError = false) {
+            outputElement.textContent = content;
+            outputElement.className = isError ? 'output-error' : 'output-success';
+        }
+        
+        async function runCode() {
+            const code = codeEditor.value.trim();
+            if (!code) {
+                setOutput('Please enter some code to execute', true);
+                return;
+            }
+            
+            loader.style.display = 'block';
+            outputElement.style.display = 'none';
+            
+            try {
+                const response = await fetch('/run', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    setOutput(data.output || 'Execution completed with no output');
+                } else {
+                    setOutput(data.error || 'Execution failed', true);
+                }
+            } catch (error) {
+                setOutput('Network error: ' + error.message, true);
+            } finally {
+                loader.style.display = 'none';
+                outputElement.style.display = 'block';
+            }
+        }
+        
+        function clearCode() {
+            codeEditor.value = '';
+            setOutput('');
+        }
+        
+        // Сохранение кода в Local Storage
+        codeEditor.addEventListener('input', () => {
+            localStorage.setItem('c_code', codeEditor.value);
+        });
+        
+        // Загрузка сохраненного кода
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedCode = localStorage.getItem('c_code');
+            if (savedCode) {
+                codeEditor.value = savedCode;
+            }
+        });
+    </script>
+</body>
+</html>
